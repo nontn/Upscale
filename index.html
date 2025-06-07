@@ -1,152 +1,210 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Upscale Gambar Gratis (2x, 4x, dst)</title>
-  <style>
-    body { font-family: Arial,sans-serif; background: #fafafa; margin: 0; }
-    .container {
-      max-width: 430px; margin: 40px auto; padding: 24px;
-      background: #fff; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: center;
-    }
-    h1 { color: #222; margin-bottom: 12px; }
-    p { color: #444; margin-bottom: 20px; }
-    .btn-upload {
-      background: #FFD600; color: #222; font-weight: bold;
-      border: none; border-radius: 8px; padding: 14px 28px; font-size: 1rem; cursor: pointer;
-      margin-bottom: 16px; margin-top: 10px; transition: background 0.2s;
-    }
-    .btn-upload:hover { background: #ffe066; }
-    .btn-upscale {
-      background: #1976d2; color: #fff; border: none; border-radius: 8px;
-      padding: 10px 22px; font-weight: bold; margin-top: 18px; margin-bottom: 18px;
-      cursor: pointer; font-size: 1rem; transition: background 0.2s;
-    }
-    .btn-upscale:hover { background: #1255aa; }
-    .btn-download {
-      background: #e53935; color: #fff; border: none; border-radius: 8px;
-      padding: 10px 22px; font-weight: bold; font-size: 1rem; cursor: pointer;
-      margin-top: 14px; transition: background 0.2s;
-    }
-    .btn-download:hover { background: #b71c1c; }
-    .preview-img, .result-img {
-      max-width: 100%; border-radius: 10px; margin-top: 16px; margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
-    input[type="file"] { display: none; }
-    label[for="upscaleTimes"] { font-weight:bold; }
-    select { padding: 6px 10px; border-radius:6px; border:1px solid #bbb; margin-left:8px; }
-    @media (max-width: 600px) { .container { margin: 10px; padding: 10px; } }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galaxy Image Upscaler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prefixfree/1.0.7/prefixfree.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        @keyframes twinkle {
+            0% { opacity: 0.1; }
+            50% { opacity: 1; }
+            100% { opacity: 0.1; }
+        }
+        
+        body {
+            overflow-x: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+        
+        .galaxy-overlay {
+            background: radial-gradient(ellipse at bottom, #1B2735 0%, #090A0F 100%);
+        }
+        
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+            background-color: rgba(13, 18, 28, 0.5);
+        }
+        
+        .image-container {
+            box-shadow: 0 0 30px rgba(138, 43, 226, 0.3);
+        }
+        
+        .btn-upscale {
+            background: linear-gradient(135deg, #9d50bb, #6e48aa);
+            transition: all 0.3s;
+        }
+        
+        .btn-upscale:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(109, 76, 170, 0.3);
+        }
+        
+        .progress-bar {
+            width: 0%;
+            transition: width 1s ease-in-out;
+        }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h1>Upscale Gambar Gratis</h1>
-    <p>Upload gambar untuk di-upscale hingga 2x, 4x, 8x, dst secara otomatis, tanpa bayar & tanpa API key.</p>
-    <label class="btn-upload">
-      Upload Gambar
-      <input type="file" id="fileInput" accept="image/*">
-    </label>
-    <div style="margin-top:12px; margin-bottom:18px;">
-      <label for="upscaleTimes">Tingkat Upscale:</label>
-      <select id="upscaleTimes">
-        <option value="1">2x</option>
-        <option value="2">4x</option>
-        <option value="3">8x</option>
-        <option value="4">16x</option>
-      </select>
-    </div>
-    <div id="previewSection" style="display:none;">
-      <h3>Preview</h3>
-      <img id="previewImg" class="preview-img" alt="Preview">
-      <br>
-      <button class="btn-upscale" id="upscaleBtn">Upscale Sekarang</button>
-    </div>
-    <div id="resultSection" style="display:none;">
-      <h3>Hasil Upscale</h3>
-      <img id="resultImg" class="result-img" alt="Upscaled">
-      <br>
-      <button class="btn-download" id="downloadBtn">Download</button>
-    </div>
-    <div id="status" style="margin-top:18px;color:#1976d2;font-weight:bold;"></div>
-  </div>
-  <script>
-    // waifu2x.udp.jp API, bertahap tanpa API key
-    const fileInput = document.getElementById('fileInput');
-    const previewSection = document.getElementById('previewSection');
-    const previewImg = document.getElementById('previewImg');
-    const upscaleBtn = document.getElementById('upscaleBtn');
-    const resultSection = document.getElementById('resultSection');
-    const resultImg = document.getElementById('resultImg');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const status = document.getElementById('status');
-    const upscaleTimes = document.getElementById('upscaleTimes');
-    let uploadedFile = null;
-    let resultBlobUrl = null;
-
-    fileInput.addEventListener('change', function(e){
-      if (e.target.files && e.target.files[0]) {
-        uploadedFile = e.target.files[0];
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          previewImg.src = ev.target.result;
-          previewSection.style.display = '';
-          resultSection.style.display = 'none';
-          status.textContent = '';
-        }
-        reader.readAsDataURL(uploadedFile);
-      }
-    });
-
-    async function upscaleWaifu2x(fileOrBlob) {
-      // Kirim ke waifu2x.udp.jp, default scale=2, noise=3 (maksimal)
-      const formData = new FormData();
-      formData.append('file', fileOrBlob);
-      formData.append('scale', '2');
-      formData.append('noise', '3');
-      const response = await fetch('https://waifu2x.udp.jp/api', {
-        method: 'POST',
-        body: formData
-      });
-      if(!response.ok) throw new Error('Upscale gagal');
-      const data = await response.json();
-      if(!data.output_url) throw new Error('Upscale gagal');
-      // Download hasilnya sebagai blob supaya bisa diulang
-      const imgBlob = await fetch(data.output_url).then(r => r.blob());
-      return imgBlob;
-    }
-
-    upscaleBtn.addEventListener('click', async function(){
-      if (!uploadedFile) return;
-      let n = parseInt(upscaleTimes.value,10); // 1=2x, 2=4x, dst
-      status.textContent = 'Memproses upscale (' + Math.pow(2,n+1) + 'x)...';
-      upscaleBtn.disabled = true;
-      previewSection.style.opacity = 0.6;
-      try {
-        let imgBlob = uploadedFile;
-        for(let i=0;i<=n;i++) {
-          status.textContent = `Upscale tahap ${i+1} dari ${n+1}...`;
-          imgBlob = await upscaleWaifu2x(imgBlob);
-        }
-        // Tampilkan hasil
-        if(resultBlobUrl) URL.revokeObjectURL(resultBlobUrl);
-        resultBlobUrl = URL.createObjectURL(imgBlob);
-        resultImg.src = resultBlobUrl;
-        resultSection.style.display = '';
-        downloadBtn.onclick = function() {
-          const a = document.createElement('a');
-          a.href = resultBlobUrl;
-          a.download = 'upscaled_' + uploadedFile.name.replace(/\.[^/.]+$/, ".png");
-          a.click();
-        }
-        status.textContent = 'Upscale selesai!';
-      } catch (e) {
-        status.textContent = 'Upscale gagal atau server penuh. Coba lagi!';
-      }
-      upscaleBtn.disabled = false;
-      previewSection.style.opacity = 1;
-    });
-  </script>
+<body class="min-h-screen galaxy-overlay text-white relative">
+    <!-- Stars background -->
+    <div id="stars"></div>
+    <div id="stars2"></div>
+    <div id="stars3"></div>
+    
+    <!-- Main container -->
+    <div class="container mx-auto px-4 py-10 relative z-10">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-500 to-blue-500 text-transparent bg-clip-text">
+                <i class="fas fa-rocket mr-2"></i>Galaxy Image Upscaler
+            </h1>
+            <p class="text-xl opacity-80">Enhance your images with cosmic quality</p>
+        </header>
+        
+        <div class="max-w-6xl mx-auto">
+            <!-- Upload section -->
+            <div class="flex flex-col lg:flex-row gap-8 mb-10">
+                <!-- Left - Upload area -->
+                <div class="w-full lg:w-1/2">
+                    <div class="upload-area rounded-xl p-6 h-full">
+                        <div id="upload-container" class="flex flex-col items-center justify-center h-full cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-6xl mb-4 text-blue-300"></i>
+                            <h3 class="text-2xl font-semibold mb-2">Upload Your Image</h3>
+                            <p class="text-center opacity-70 mb-6">Drag & drop an image or click to browse (JPG, PNG up to 5MB)</p>
+                            <button id="select-btn" class="btn-upscale px-6 py-3 rounded-lg font-medium">
+                                <i class="fas fa-folder-open mr-2"></i>Select Image
+                            </button>
+                            <input type="file" id="file-input" accept="image/*" class="hidden">
+                        </div>
+                        <div id="preview-section" class="hidden h-full flex flex-col">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-xl font-medium">Selected Image</h3>
+                                <button id="change-image" class="text-blue-300 hover:text-blue-100">
+                                    <i class="fas fa-redo mr-1"></i>Change
+                                </button>
+                            </div>
+                            <div class="flex-grow relative">
+                                <img id="preview-image" src="" alt="Preview" class="max-h-64 md:max-h-80 w-auto mx-auto rounded-lg">
+                            </div>
+                            <div class="mt-4">
+                                <button id="upscale-btn" class="btn-upscale w-full py-3 rounded-lg font-medium">
+                                    <i class="fas fa-magic mr-2"></i>Upscale Image
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right - Settings -->
+                <div class="w-full lg:w-1/2">
+                    <div class="bg-gray-900 bg-opacity-50 rounded-xl p-6 h-full">
+                        <h3 class="text-xl font-semibold mb-6 border-b border-gray-700 pb-3">
+                            <i class="fas fa-cog mr-2 text-blue-300"></i>Upscale Settings
+                        </h3>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block mb-2 text-sm font-medium">Scale Factor</label>
+                                <div class="flex items-center">
+                                    <input type="range" id="scale-factor" min="2" max="8" step="2" value="4" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                                    <span id="scale-value" class="ml-4 w-16 text-center font-bold">4x</span>
+                                </div>
+                                <p class="mt-2 text-xs opacity-70">Higher values take more time to process</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-2 text-sm font-medium">Noise Reduction</label>
+                                <div class="flex items-center">
+                                    <input type="range" id="noise-reduction" min="0" max="10" value="5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                                    <span id="noise-value" class="ml-4 w-10 text-center font-bold">5</span>
+                                </div>
+                                <p class="mt-2 text-xs opacity-70">Reduces noise but may soften details</p>
+                            </div>
+                            
+                            <div>
+                                <label class="block mb-2 text-sm font-medium">Sharpness</label>
+                                <div class="flex items-center">
+                                    <input type="range" id="sharpness" min="0" max="10" value="5" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                                    <span id="sharpness-value" class="ml-4 w-10 text-center font-bold">5</span>
+                                </div>
+                                <p class="mt-2 text-xs opacity-70">Higher values enhance edges but may introduce artifacts</p>
+                            </div>
+                            
+                            <div class="pt-4 border-t border-gray-700">
+                                <button id="advanced-btn" class="text-blue-300 hover:text-blue-100 text-sm">
+                                    <i class="fas fa-sliders-h mr-1"></i>Show Advanced Options
+                                </button>
+                                <div id="advanced-options" class="mt-4 hidden space-y-4">
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="preserve-colors" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                                        <label for="preserve-colors" class="ml-2 text-sm">Preserve Original Colors</label>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <input type="checkbox" id="enhance-details" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                                        <label for="enhance-details" class="ml-2 text-sm">Enhance Fine Details</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Result section (hidden by default) -->
+            <div id="result-section" class="hidden mt-16">
+                <h2 class="text-3xl font-bold mb-8 text-center">
+                    <i class="fas fa-stars mr-2 text-yellow-300"></i>Upscaled Result
+                </h2>
+                
+                <div class="flex flex-col md:flex-row gap-6 mb-10">
+                    <div class="w-full md:w-1/2">
+                        <div class="image-container bg-gray-900 rounded-xl p-4">
+                            <h4 class="text-center mb-3 text-lg font-medium">Original Image</h4>
+                            <img id="original-image" src="" alt="Original" class="w-full h-auto rounded-lg">
+                            <div class="text-center mt-2 text-sm opacity-70">
+                                <span id="original-dimensions">-</span> | 
+                                <span id="original-size">- KB</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="w-full md:w-1/2">
+                        <div class="image-container bg-gray-900 rounded-xl p-4 relative">
+                            <h4 class="text-center mb-3 text-lg font-medium">Upscaled Image</h4>
+                            <img id="upscaled-image" src="" alt="Upscaled" class="w-full h-auto rounded-lg">
+                            <div class="text-center mt-2 text-sm opacity-70">
+                                <span id="upscaled-dimensions">-</span> | 
+                                <span id="upscaled-size">- KB</span>
+                            </div>
+                            <div id="progress-container" class="absolute inset-0 bg-black bg-opacity-70 rounded-lg flex items-center justify-center hidden">
+                                <div class="text-center p-6">
+                                    <div class="w-40 h-1.5 bg-gray-700 rounded-full mb-4 mx-auto overflow-hidden">
+                                        <div id="progress-bar" class="progress-bar h-full bg-gradient-to-r from-blue-400 to-purple-500"></div>
+                                    </div>
+                                    <p id="progress-text" class="text-sm">Processing...</p>
+                                    <p id="progress-percent" class="text-xs opacity-70">0%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <button id="download-btn"
 </body>
 </html>
